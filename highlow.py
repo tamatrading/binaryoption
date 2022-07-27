@@ -28,6 +28,8 @@ ORD_PWD = "fAGgL9vWzJ"
 MAIL_ADR = 'mtake88@gmail.com'
 MAIL_PWD = 'jnfzzdwkghwmrgkm'
 
+BET_MONEY = 2000
+
 RETRY = 3
 orderList = []  # 注文内容をメールで送信
 
@@ -54,44 +56,51 @@ def hiloLogOut():
 def hiloLogin():
     # サイトを開く
     driver.get("https://highlow.com/login/")
-    time.sleep(3)
-
+    time.sleep(1)
 
     # ユーザIDを入力
-    userID = driver.find_element(by=By.ID, value="username")
+    userID = driver.find_element(by=By.ID, value="login-username")
     userID.send_keys(USER_ID)
 
-    time.sleep(3)
-    return 0
-
     # パスワードを入力
-    userpass = driver.find_element(by=By.NAME, value="password")
+    userpass = driver.find_element(by=By.ID, value="login-password")
     userpass.send_keys(USER_PWD)
+
+    # ログインをクリック
+    login = driver.find_element(by=By.ID, value="login-submit-button")
+    login.click()
+    time.sleep(3)
+
+    #ログインチェック（口座残高を取得）
+    try:
+        moneyTag = driver.find_element(by=By.ID, value="balanceValue")
+
+    except NoSuchElementException:  #口座残高が取得できなかった
+        #tmp = driver.find_elements(by=By.XPATH, value="//b[contains(text(),'重要なお知らせ')]")
+        #if len(tmp) >= 1:
+        #    ii = -1
+        #else:
+        #    ii = -2
+        print("Error!!!")
+        return -1
+
+    #口座残高の"￥(半角)"と、","を削除
+    mmm = re.sub(r",", "", moneyTag.text[1:])   # "￥"が取り除けなかったので、[1:]で先頭文字を無視するようにした
+    money = int(mmm)
+    print(money)
+
+    #残高があるか確認
+    if BET_MONEY > money:
+        print("残高不足！")
+        return -2
+
+    betBox = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[1]/div[2]/div/input")
+    betBox.send_keys(str(BET_MONEY))
+
+    return 0
 
 
     '''
-
-    # ログインをクリック
-    login = driver.find_element(by=By.NAME, value="ACT_login")
-    login.click()
-    time.sleep(3)
-'''
-
-'''
-    # name属性で指定
-    try:
-        moneyTag = driver.find_element(by=By.XPATH,
-                                       value="/html/body/table/tbody/tr[1]/td[1]/div[2]/div[1]/div/div/div/div/table/tbody/tr/td[1]/span")
-    except NoSuchElementException:
-        tmp = driver.find_elements(by=By.XPATH, value="//b[contains(text(),'重要なお知らせ')]")
-        if len(tmp) >= 1:
-            ii = -1
-        else:
-            ii = -2
-        return ii
-
-    money = int(moneyTag.text.replace(",", ""))
-    print(money)
 
     # IPOページに入る
     driver.find_element(by=By.LINK_TEXT, value="IPO・PO").click()
