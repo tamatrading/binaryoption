@@ -67,23 +67,30 @@ holidayList =\
 # 本日がトレード日かどうかチェックする
 #-----------------------------
 def check_tradeDay(dt):
-    ret = True
-    holy = False
+    today = dt.date()
 
-    week = dt.date().weekday()
-    day = dt.date().day
+    week = today.weekday()
+    day = today.day % 5
 
-    # 祭日チェック
-    if str(dt.date()) in holidayList:
-        holy = True
+    # 本日が土日であればトレード日ではない
+    if week < 5:
+        return False
 
-    # もし今日が5,10日で、かつ土日祭でなければ、トレード日とする
-    if ((day % 5) == 0):
-        if (week < 5) and (holy == False):
-            return True
-    else:
+    # 本日が祭日であればトレード日ではない
+    if str(today) in holidayList:
+        print(f'本日は祭日である：{today}')
+        return False
 
-    return ret
+    # 5, 10日チェック
+    if (day == 0): #今日は5,10日である
+        return True
+    else: #今日は5,10日でない
+        t1 = today + timedelta(days=1)
+        if (t1.day % 5) == 0:
+            if (str(t1) in holidayList) or (t1.weekday() > 4):
+                return True
+
+    return False
 
 #-----------------------------
 #ログアウトする
