@@ -5,6 +5,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.options import Options
 
 # 指定時間待機
+import datetime
 import time
 import re
 
@@ -28,11 +29,60 @@ ORD_PWD = "fAGgL9vWzJ"
 MAIL_ADR = 'mtake88@gmail.com'
 MAIL_PWD = 'jnfzzdwkghwmrgkm'
 
-BET_MONEY = 2000
+BET_MONEY = 1000
 
 RETRY = 3
 orderList = []  # 注文内容をメールで送信
+holidayList =\
+[
+    "2022-07-18",
+    "2022-07-28",
+    "2022-08-11",
+    '2022-09-19',
+    '2022-09-23',
+    '2022-10-10',
+    '2022-11-03',
+    '2022-12-31',
+    '2023-01-01',
+    '2023-01-02',
+    '2023-01-09',
+    '2023-02-11',
+    '2023-02-23',
+    '2023-03-21',
+    '2023-04-29',
+    '2023-05-03',
+    '2023-05-04',
+    '2023-05-05',
+    '2023-07-17',
+    '2023-08-11',
+    '2023-09-18',
+    '2023-09-23',
+    '2023-10-09',
+    '2023-11-03',
+    '2023-11-23',
+    '2023-12-31'
+]
 
+#-----------------------------
+# 本日がトレード日かどうかチェックする
+#-----------------------------
+def check_tradeDay(dt):
+    ret = True
+    holy = False
+
+    week = dt.date().weekday()
+    day = dt.date().day
+
+    # 祭日チェック
+    if str(dt.date()) in holidayList:
+        holy = True
+
+    # もし今日が5,10日で、かつ土日祭でなければ、トレード日とする
+    if ((day % 5) == 0):
+        if (week < 5) and (holy == False):
+            return True
+
+    return ret
 
 #-----------------------------
 #ログアウトする
@@ -57,6 +107,12 @@ def hiloLogin():
     # サイトを開く
     driver.get("https://highlow.com/login/")
     time.sleep(1)
+
+    # 本日が5,10日かどうかを確認する
+    dt = datetime.datetime.today()  # ローカルな現在の日付と時刻を取得
+    if check_tradeDay(dt) == False:
+        print(f'トレード日ではない：{dt.date()}')
+        return -1
 
     # ユーザIDを入力
     userID = driver.find_element(by=By.ID, value="login-username")
@@ -96,6 +152,16 @@ def hiloLogin():
 
     betBox = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[1]/div[2]/div/input")
     betBox.send_keys(str(BET_MONEY))
+
+    # LOWをクリック
+    login = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/div[1]/div/div[1]/div[3]/div")
+    login.click()
+
+    # 今すぐ購入をクリック
+    #login = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/div[1]/div/div[2]/div/div")
+    #login.click()
+
+    time.sleep(1)
 
     return 0
 
