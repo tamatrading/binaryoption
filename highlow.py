@@ -81,6 +81,7 @@ def check_tradeDay(dt):
     if ((day % 5) == 0):
         if (week < 5) and (holy == False):
             return True
+    else:
 
     return ret
 
