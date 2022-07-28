@@ -36,7 +36,7 @@ orderList = []  # 注文内容をメールで送信
 holidayList =\
 [
     "2022-07-18",
-    "2022-07-28",
+    "2022-07-29",
     "2022-08-11",
     '2022-09-19',
     '2022-09-23',
@@ -64,31 +64,49 @@ holidayList =\
 ]
 
 #-----------------------------
+# 本日が休日かどうかチェックする
+#-----------------------------
+def isHoliday(day: datetime):
+    ret = False
+
+    # 本日が土日であれば休日
+    if day.weekday() > 4:
+        ret = True
+    else:
+        # 本日が祝日であれば休日
+        if str(day) in holidayList:
+            ret = True
+
+    return ret
+
+#-----------------------------
 # 本日がトレード日かどうかチェックする
 #-----------------------------
 def check_tradeDay(dt):
     today = dt.date()
 
-    week = today.weekday()
-    day = today.day % 5
-
-    # 本日が土日であればトレード日ではない
-    if week < 5:
-        return False
-
-    # 本日が祭日であればトレード日ではない
-    if str(today) in holidayList:
-        print(f'本日は祭日である：{today}')
+    # 本日が休日ならトレード日ではない
+    if isHoliday(today) == True:
         return False
 
     # 5, 10日チェック
-    if (day == 0): #今日は5,10日である
+    if (today.day % 5) == 0: #今日は5,10日である
         return True
-    else: #今日は5,10日でない
-        t1 = today + timedelta(days=1)
-        if (t1.day % 5) == 0:
-            if (str(t1) in holidayList) or (t1.weekday() > 4):
+    else: #今日は5,10日でない営業日
+        t1 = today + datetime.timedelta(days=1)
+        if isHoliday(t1) == True:
+            if (t1.day % 5)== 0:
                 return True
+            else:
+                t2 = today + datetime.timedelta(days=2)
+                if isHoliday(t2) == True:
+                    if (t2.day % 5) == 0:
+                        return True
+                    else:
+                        t3 = today + datetime.timedelta(days=3)
+                        if isHoliday(t3) == True:
+                            if (t3.day % 5) == 0:
+                                return True
 
     return False
 
