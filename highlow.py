@@ -30,13 +30,18 @@ MAIL_ADR = 'mtake88@gmail.com'
 MAIL_PWD = 'jnfzzdwkghwmrgkm'
 
 BET_MONEY = 1000
+ENTRY_TIME = "12:53:33"
+#ENTRY_TIME = "09:54:33"
+
+v_dt = datetime.datetime.today()  # ローカルな現在の日付と時刻を取得
+v_entryTime = datetime.datetime.strptime(ENTRY_TIME, '%H:%M:%S').replace(year=v_dt.year, month=v_dt.month, day=v_dt.day)
+v_entryBefore1Minute = (datetime.datetime.strptime(ENTRY_TIME, '%H:%M:%S') + datetime.timedelta(minutes=-1)).replace(year=v_dt.year, month=v_dt.month, day=v_dt.day)
 
 RETRY = 3
 orderList = []  # 注文内容をメールで送信
 holidayList =\
 [
     "2022-07-18",
-    "2022-07-29",
     "2022-08-11",
     '2022-09-19',
     '2022-09-23',
@@ -114,31 +119,53 @@ def check_tradeDay(dt):
 #ログアウトする
 #-----------------------------
 def hiloLogOut():
-    '''
     try:
         tmp = driver.find_element(by=By.XPATH, value="//img[@title='ログアウト']")
     except NoSuchElementException:
-        print("err")
-        sendIpoMail(-3)
+        print("LogOut Err")
         return
     tmp.click()
     time.sleep(2)
-    '''
-    time.sleep(1)
+
+#-----------------------------
+# 取引日付・取引時間のチェック
+#-----------------------------
+def checkEntryDateTime():
+
+    # 本日が5,10日かどうかを確認する
+    v_dt = datetime.datetime.today()  # ローカルな現在の日付と時刻を取得
+    if check_tradeDay(v_dt) == False:
+        print(f'トレード日ではない：{v_dt.date()}')
+    #        return -1
+
+    # 現在時刻がエントリ時刻の１分前より前かどうかを確認する
+
+    if v_dt > v_entryBefore1Minute:
+        print("エントリ時刻を過ぎています")
+        return -2
+
+    return 0
+
+# -----------------------------
+# 現在時刻が指定時間になるまで待つ
+# -----------------------------
+def waitDateTime(tm:datetime):
+    # 現在時刻がエントリ時刻の１分前になるまでループして待つ
+    while True:
+        v_dt = datetime.datetime.today()
+        print(v_dt)
+        if v_dt >= tm:
+            break
+        time.sleep(1)
 
 #-----------------------------
 #HighLowの口座にログインし、指定の時間が来たら申し込みをする
 #-----------------------------
 def hiloLogin():
+
     # サイトを開く
     driver.get("https://highlow.com/login/")
     time.sleep(1)
-
-    # 本日が5,10日かどうかを確認する
-    dt = datetime.datetime.today()  # ローカルな現在の日付と時刻を取得
-    if check_tradeDay(dt) == False:
-        print(f'トレード日ではない：{dt.date()}')
-        return -1
 
     # ユーザIDを入力
     userID = driver.find_element(by=By.ID, value="login-username")
@@ -163,8 +190,8 @@ def hiloLogin():
         #    ii = -1
         #else:
         #    ii = -2
-        print("Error!!!")
-        return -1
+        print("Login Error!!!")
+        return -3
 
     #口座残高の"￥(半角)"と、","を削除
     mmm = re.sub(r",", "", moneyTag.text[1:])   # "￥"が取り除けなかったので、[1:]で先頭文字を無視するようにした
@@ -174,115 +201,55 @@ def hiloLogin():
     #残高があるか確認
     if BET_MONEY > money:
         print("残高不足！")
-        return -2
+        return -4
 
-    betBox = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[1]/div[2]/div/input")
-    betBox.send_keys(str(BET_MONEY))
+    try:
+        betBox = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[1]/div[2]/div/input")
+        betBox.send_keys(str(BET_MONEY))
+    except NoSuchElementException:  #金額設定ができなかった
+        print("取引時間外？")
+        return -5
 
     # LOWをクリック
     login = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/div[1]/div/div[1]/div[3]/div")
     login.click()
 
+    # 現在時刻がエントリ時刻になるまでループして待つ
+    waitDateTime(v_entryTime)
+
     # 今すぐ購入をクリック
     #login = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/div[1]/div/div[2]/div/div")
     #login.click()
 
-    time.sleep(1)
+    time.sleep(60)
 
     return 0
 
-
-    '''
-
-    # IPOページに入る
-    driver.find_element(by=By.LINK_TEXT, value="IPO・PO").click()
-    time.sleep(3)
-    driver.find_element(by=By.XPATH, value="//img[@alt='新規上場株式ブックビルディング / 購入意思表示']").click()
-    time.sleep(3)
-
-    # 申込できる銘柄をチェック
-    while True:
-        reqs = driver.find_elements(by=By.XPATH, value="//img[@alt='申込']")
-
-        if len(reqs) > 0:
-            order_one = []
-            print(f"ipo = {len(reqs)}")
-            reqs[0].click()
-            time.sleep(3)
-
-            # ===== 個別の申し込み画面 =====
-            # 銘柄名
-            tag = driver.find_element(by=By.XPATH,
-                                      value="/html/body/table/tbody/tr/td/table[1]/tbody/tr/td/table[1]/tbody/tr[1]/td/form/table[4]/tbody/tr/td")
-            print(tag.text)
-            order_one.append(tag.text)
-
-            kari_tag = driver.find_element(by=By.XPATH,
-                                           value="/html/body/table/tbody/tr/td/table[1]/tbody/tr/td/table[1]/tbody/tr[1]/td/form/table[5]/tbody/tr/td[1]/table/tbody/tr[2]/td[2]/div")
-            ss = kari_tag.text.split(' ')
-            kari = int(ss[-2].replace(",", ""))
-            # print(kari)
-            order_one.append(kari)
-
-            unit_tag = driver.find_element(by=By.XPATH, value="//td[contains(text(),'売買単位')]")
-            unit = int(re.findall(r'/(.*)株', unit_tag.text)[0])
-            # print(unit)
-            cnt = int(money / (kari * unit)) * unit  # 申込株数
-            # print(cnt)
-
-            # name属性で数量指定
-            suryo = driver.find_element(by=By.NAME, value="suryo")
-            suryo.send_keys(str(cnt))
-            order_one.append(cnt)
-
-            # id属性で「ストライクプライス」にチェック指定
-            strike = driver.find_element(by=By.ID, value="strPriceRadio")
-            strike.click()
-
-            # print(order_one)
-
-            # name属性で数量指定
-            toripass = driver.find_element(by=By.NAME, value="tr_pass")
-            toripass.send_keys(ORD_PWD)
-
-            # name属性で申込確認ボタン指定・クリック
-            driver.find_element(by=By.NAME, value="order_kakunin").click()
-            time.sleep(2)
-
-            # ===== 申し込み確認画面 =====
-            # name属性で申込ボタン指定・クリック
-            driver.find_element(by=By.NAME, value="order_btn").click()
-            time.sleep(2)
-
-            # ===== 申し込み完了画面 =====
-            # IPOトップへ戻る・クリック
-            orderList.append(order_one)
-            driver.find_element(by=By.XPATH, value="//a[contains(text(),'購入意思表示画面へ戻る')]").click()
-            time.sleep(3)
-        else:
-            break
-    return 0
 '''
-
+メインルーチン
+'''
 if __name__ == "__main__":
 
-    chrome_service = fs.Service(executable_path=CHROMEDRIVER)
+    if checkEntryDateTime() == 0:
 
-    if DISP_MODE == "OFF":
-        options = Options()
-        options.add_argument('--headless')
-        driver = webdriver.Chrome(service=chrome_service, options=options)
-    else:
-        driver = webdriver.Chrome(service=chrome_service)
+        # 現在時刻がエントリ時刻の１分前になるまでループして待つ
+        waitDateTime(v_entryBefore1Minute)
 
-    for retry in range(RETRY):
-        ret = hiloLogin()
+        #chromeを起動する
+        chrome_service = fs.Service(executable_path=CHROMEDRIVER)
+        if DISP_MODE == "OFF":
+            options = Options()
+            options.add_argument('--headless')
+            driver = webdriver.Chrome(service=chrome_service, options=options)
+        else:
+            driver = webdriver.Chrome(service=chrome_service)
+
+        hiloLogin()
         hiloLogOut()
-        if ret == 0:
-            break
 
-    driver.quit()
+        #chromeを閉じる
+        driver.quit()
 
-    print(orderList)
+
     print("complete")
 
