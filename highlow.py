@@ -30,7 +30,7 @@ MAIL_ADR = 'mtake88@gmail.com'
 MAIL_PWD = 'jnfzzdwkghwmrgkm'
 
 BET_MONEY = 1000
-ENTRY_TIME = "12:53:33"
+ENTRY_TIME = "13:53:33"
 #ENTRY_TIME = "09:54:33"
 
 v_dt = datetime.datetime.today()  # ローカルな現在の日付と時刻を取得
@@ -119,10 +119,21 @@ def check_tradeDay(dt):
 #ログアウトする
 #-----------------------------
 def hiloLogOut():
+
+    #「お客様情報」をクリック
     try:
-        tmp = driver.find_element(by=By.XPATH, value="//img[@title='ログアウト']")
+        tmp = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[3]/div[9]")
     except NoSuchElementException:
-        print("LogOut Err")
+        print("LogOut 1 Err")
+        return
+    tmp.click()
+    time.sleep(1)
+
+    #「ログアウト」をクリック
+    try:
+        tmp = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[6]/div/div[5]/div")
+    except NoSuchElementException:
+        print("LogOut 2 Err")
         return
     tmp.click()
     time.sleep(2)
@@ -135,7 +146,7 @@ def checkEntryDateTime():
     # 本日が5,10日かどうかを確認する
     v_dt = datetime.datetime.today()  # ローカルな現在の日付と時刻を取得
     if check_tradeDay(v_dt) == False:
-        print(f'トレード日ではない：{v_dt.date()}')
+        print(f'トレード日ではありません：{v_dt.date()}')
     #        return -1
 
     # 現在時刻がエントリ時刻の１分前より前かどうかを確認する
@@ -208,11 +219,11 @@ def hiloLogin():
         betBox.send_keys(str(BET_MONEY))
     except NoSuchElementException:  #金額設定ができなかった
         print("取引時間外？")
-        return -5
+    #    return -5
 
     # LOWをクリック
-    login = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/div[1]/div/div[1]/div[3]/div")
-    login.click()
+    #   login = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/div[1]/div/div[1]/div[3]/div")
+    #login.click()
 
     # 現在時刻がエントリ時刻になるまでループして待つ
     waitDateTime(v_entryTime)
@@ -220,8 +231,6 @@ def hiloLogin():
     # 今すぐ購入をクリック
     #login = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/div[1]/div/div[2]/div/div")
     #login.click()
-
-    time.sleep(60)
 
     return 0
 
@@ -245,6 +254,7 @@ if __name__ == "__main__":
             driver = webdriver.Chrome(service=chrome_service)
 
         hiloLogin()
+        time.sleep(6)
         hiloLogOut()
 
         #chromeを閉じる
