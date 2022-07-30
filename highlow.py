@@ -8,6 +8,7 @@ from selenium.webdriver.chrome.options import Options
 import datetime
 import time
 import re
+import configparser
 
 #gmail
 #from gmail import sendGmail
@@ -21,52 +22,50 @@ from selenium.webdriver.common.by import By
 # セレクトボックスの選択に利用
 from selenium.webdriver.support.ui import Select
 
+
+USER_ID = ""
+USER_PWD = ""
+BET_MONEY = 0
+ENTRY_TIME = ""
+
 CHROMEDRIVER = "C:\MyPrg\Python\chromedriver.exe"
 DISP_MODE = "ON"   # "ON" or "OFF"
-USER_ID = "mtake88@gmail.com"
-USER_PWD = "zX6XiGFK"
 ORD_PWD = "fAGgL9vWzJ"
 MAIL_ADR = 'mtake88@gmail.com'
 MAIL_PWD = 'jnfzzdwkghwmrgkm'
 
-BET_MONEY = 1000
-ENTRY_TIME = "13:53:33"
 #ENTRY_TIME = "09:54:33"
 
-v_dt = datetime.datetime.today()  # ローカルな現在の日付と時刻を取得
-v_entryTime = datetime.datetime.strptime(ENTRY_TIME, '%H:%M:%S').replace(year=v_dt.year, month=v_dt.month, day=v_dt.day)
-v_entryBefore1Minute = (datetime.datetime.strptime(ENTRY_TIME, '%H:%M:%S') + datetime.timedelta(minutes=-1)).replace(year=v_dt.year, month=v_dt.month, day=v_dt.day)
+v_dt = ""  # ローカルな現在の日付と時刻を取得
+v_entryTime = ""
+v_entryBefore1Minute = ""
 
 RETRY = 3
-orderList = []  # 注文内容をメールで送信
-holidayList =\
-[
-    "2022-07-18",
-    "2022-08-11",
-    '2022-09-19',
-    '2022-09-23',
-    '2022-10-10',
-    '2022-11-03',
-    '2022-12-31',
-    '2023-01-01',
-    '2023-01-02',
-    '2023-01-09',
-    '2023-02-11',
-    '2023-02-23',
-    '2023-03-21',
-    '2023-04-29',
-    '2023-05-03',
-    '2023-05-04',
-    '2023-05-05',
-    '2023-07-17',
-    '2023-08-11',
-    '2023-09-18',
-    '2023-09-23',
-    '2023-10-09',
-    '2023-11-03',
-    '2023-11-23',
-    '2023-12-31'
-]
+holidayList = []
+
+def getConfigFile():
+    global holidayList
+    global v_dt
+    global v_entryTime
+    global v_entryBefore1Minute
+    global USER_ID
+    global USER_PWD
+    global BET_MONEY
+    global ENTRY_TIME
+
+    config_txt = configparser.ConfigParser()
+    config_txt.read('config.txt', encoding='utf-8')
+
+    USER_ID = config_txt.get('DEFAULT', 'userid')
+    USER_PWD = config_txt.get('DEFAULT', 'passwd')
+    ENTRY_TIME = config_txt.get('DEFAULT', 'entryTime')
+    BET_MONEY = config_txt.get('DEFAULT', 'betPrice')
+
+    holidayList = eval(config_txt.get('HOLYDAY','holyday'))
+
+    v_dt = datetime.datetime.today()  # ローカルな現在の日付と時刻を取得
+    v_entryTime = datetime.datetime.strptime(ENTRY_TIME, '%H:%M:%S').replace(year=v_dt.year, month=v_dt.month, day=v_dt.day)
+    v_entryBefore1Minute = (datetime.datetime.strptime(ENTRY_TIME, '%H:%M:%S') + datetime.timedelta(minutes=-1)).replace(year=v_dt.year, month=v_dt.month, day=v_dt.day)
 
 #-----------------------------
 # 本日が休日かどうかチェックする
@@ -238,6 +237,11 @@ def hiloLogin():
 メインルーチン
 '''
 if __name__ == "__main__":
+
+    getConfigFile()
+    print(v_dt)
+    print(v_entryTime)
+    print(v_entryBefore1Minute)
 
     if checkEntryDateTime() == 0:
 
