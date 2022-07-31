@@ -59,7 +59,7 @@ def getConfigFile():
     USER_ID = config_txt.get('DEFAULT', 'userid')
     USER_PWD = config_txt.get('DEFAULT', 'passwd')
     ENTRY_TIME = config_txt.get('DEFAULT', 'entryTime')
-    BET_MONEY = config_txt.get('DEFAULT', 'betPrice')
+    BET_MONEY = int(config_txt.get('DEFAULT', 'betPrice'))
 
     holidayList = eval(config_txt.get('HOLYDAY','holyday'))
 
