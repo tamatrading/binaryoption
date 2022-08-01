@@ -180,7 +180,7 @@ def waitDateTime(tm:datetime):
     # 現在時刻がエントリ時刻の１分前になるまでループして待つ
     while True:
         v_dt = datetime.datetime.today()
-        print(v_dt)
+        #print(v_dt)
         if v_dt >= tm:
             break
         time.sleep(1)
@@ -252,6 +252,7 @@ def hiloLogin():
     writeMsg(f'取引前の残高：{money}')
 
     # 現在時刻がエントリ時刻になるまでループして待つ
+    print(f'ただ今、エントリ時間まで待機中です・・・（エントリ時間：{v_entryTime}）')
     waitDateTime(v_entryTime)
 
     # 今すぐ購入をクリック
@@ -268,13 +269,14 @@ if __name__ == "__main__":
     writeMsg("--- 開始 ---")
 
     getConfigFile()
-    print(v_dt)
-    print(v_entryTime)
-    print(v_entryBefore1Minute)
+    print(f'--- 現在の日時 ---：{v_dt}')
+    print(f'--- エントリ時間 ---：{v_entryTime}')
+    print(f'--- ログイン時間 ---：{v_entryBefore1Minute}')
 
     if checkEntryDateTime() == 0:
 
         # 現在時刻がエントリ時刻の１分前になるまでループして待つ
+        print(f'ただ今、ログイン時間まで待機中です・・・（ログイン時間：{v_entryBefore1Minute}）')
         waitDateTime(v_entryBefore1Minute)
 
         #chromeを起動する
