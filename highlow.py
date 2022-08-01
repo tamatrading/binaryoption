@@ -1,8 +1,10 @@
 #selenium起動
 from selenium import webdriver
-from selenium.webdriver.chrome import service as fs
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
 
 # 指定時間待機
 import datetime
@@ -17,8 +19,6 @@ from gmail import sendGmail
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 
-from selenium.webdriver.common.by import By
-
 # セレクトボックスの選択に利用
 from selenium.webdriver.support.ui import Select
 
@@ -31,7 +31,6 @@ MAIL_ADR = ''
 MAIL_PWD = ''
 MAIL_TITLE = ''
 
-CHROMEDRIVER = "C:\MyPrg\Python\chromedriver.exe"
 DISP_MODE = "ON"   # "ON" or "OFF"
 
 #ENTRY_TIME = "09:54:33"
@@ -162,7 +161,7 @@ def checkEntryDateTime():
     if check_tradeDay(v_dt) == False:
         msg = f'今日はトレード日ではありません'
         writeMsg(msg)
-    #        return -1
+            return -1
 
     # 現在時刻がエントリ時刻の１分前より前かどうかを確認する
 
@@ -259,6 +258,8 @@ def hiloLogin():
     login = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/div[1]/div/div[2]/div/div")
     login.click()
 
+    print(f'エントリ実行しました。現在エントリ中です・・・')
+
     return 1
 
 '''
@@ -280,16 +281,18 @@ if __name__ == "__main__":
         waitDateTime(v_entryBefore1Minute)
 
         #chromeを起動する
-        chrome_service = fs.Service(executable_path=CHROMEDRIVER)
         if DISP_MODE == "OFF":
             options = Options()
             options.add_argument('--headless')
-            driver = webdriver.Chrome(service=chrome_service, options=options)
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         else:
-            driver = webdriver.Chrome(service=chrome_service)
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
         if hiloLogin() > 0:
-            time.sleep(60)
+            time.sleep(30)
+            print(f'エントリ終了しました。しばらくお待ち下さい・・・')
+            time.sleep(30)
+
             afterMoney = getBalanceValue()
             writeMsg(f'取引後の残高：{afterMoney}')
             hiloLogOut()
