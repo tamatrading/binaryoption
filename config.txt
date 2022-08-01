@@ -2,7 +2,7 @@
 userid = mtake88@gmail.com
 passwd = zX6XiGFK
 betPrice = 1000
-entryTime = 22:17:33
+entryTime = 09:54:33
 gmailAdr = mtake88@gmail.com
 gmailPwd = jnfzzdwkghwmrgkm
 gmailTitle = BinaryOption

@@ -161,7 +161,7 @@ def checkEntryDateTime():
     if check_tradeDay(v_dt) == False:
         msg = f'今日はトレード日ではありません'
         writeMsg(msg)
-            return -1
+        return -1
 
     # 現在時刻がエントリ時刻の１分前より前かどうかを確認する
 
