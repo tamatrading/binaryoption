@@ -11,7 +11,7 @@ import re
 import configparser
 
 #gmail
-#from gmail import sendGmail
+from gmail import sendGmail
 
 # マウスやキーボード操作に利用
 from selenium.webdriver.common.action_chains import ActionChains
@@ -27,12 +27,12 @@ USER_ID = ""
 USER_PWD = ""
 BET_MONEY = 0
 ENTRY_TIME = ""
+MAIL_ADR = ''
+MAIL_PWD = ''
+MAIL_TITLE = ''
 
 CHROMEDRIVER = "C:\MyPrg\Python\chromedriver.exe"
 DISP_MODE = "ON"   # "ON" or "OFF"
-ORD_PWD = "fAGgL9vWzJ"
-MAIL_ADR = 'mtake88@gmail.com'
-MAIL_PWD = 'jnfzzdwkghwmrgkm'
 
 #ENTRY_TIME = "09:54:33"
 
@@ -40,8 +40,17 @@ v_dt = ""  # ローカルな現在の日付と時刻を取得
 v_entryTime = ""
 v_entryBefore1Minute = ""
 
-RETRY = 3
 holidayList = []
+msgBuf = ""
+
+def writeMsg(message):
+    global msgBuf
+
+    msgBuf += datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+    msgBuf += " : "
+    msgBuf += message
+    msgBuf += "\n"
+
 
 def getConfigFile():
     global holidayList
@@ -52,6 +61,9 @@ def getConfigFile():
     global USER_PWD
     global BET_MONEY
     global ENTRY_TIME
+    global MAIL_ADR
+    global MAIL_PWD
+    global MAIL_TITLE
 
     config_txt = configparser.ConfigParser()
     config_txt.read('config.txt', encoding='utf-8')
@@ -60,6 +72,9 @@ def getConfigFile():
     USER_PWD = config_txt.get('DEFAULT', 'passwd')
     ENTRY_TIME = config_txt.get('DEFAULT', 'entryTime')
     BET_MONEY = int(config_txt.get('DEFAULT', 'betPrice'))
+    MAIL_ADR = config_txt.get('DEFAULT', 'gmailAdr')
+    MAIL_PWD = config_txt.get('DEFAULT', 'gmailPwd')
+    MAIL_TITLE = config_txt.get('DEFAULT', 'gmailTitle')
 
     holidayList = eval(config_txt.get('HOLYDAY','holyday'))
 
@@ -87,7 +102,7 @@ def isHoliday(day: datetime):
 # 本日がトレード日かどうかチェックする
 #-----------------------------
 def check_tradeDay(dt):
-    today = dt.date()
+    today = v_dt.date()
 
     # 本日が休日ならトレード日ではない
     if isHoliday(today) == True:
@@ -126,7 +141,7 @@ def hiloLogOut():
         print("LogOut 1 Err")
         return
     tmp.click()
-    time.sleep(1)
+    time.sleep(2)
 
     #「ログアウト」をクリック
     try:
@@ -135,7 +150,7 @@ def hiloLogOut():
         print("LogOut 2 Err")
         return
     tmp.click()
-    time.sleep(2)
+    time.sleep(3)
 
 #-----------------------------
 # 取引日付・取引時間のチェック
@@ -145,13 +160,15 @@ def checkEntryDateTime():
     # 本日が5,10日かどうかを確認する
     v_dt = datetime.datetime.today()  # ローカルな現在の日付と時刻を取得
     if check_tradeDay(v_dt) == False:
-        print(f'トレード日ではありません：{v_dt.date()}')
+        msg = f'今日はトレード日ではありません'
+        writeMsg(msg)
     #        return -1
 
     # 現在時刻がエントリ時刻の１分前より前かどうかを確認する
 
     if v_dt > v_entryBefore1Minute:
-        print("エントリ時刻を過ぎています")
+        msg = f'エントリ時刻を過ぎています'
+        writeMsg(msg)
         return -2
 
     return 0
@@ -167,6 +184,23 @@ def waitDateTime(tm:datetime):
         if v_dt >= tm:
             break
         time.sleep(1)
+
+#-----------------------------
+# 口座残高を取得する
+#-----------------------------
+def getBalanceValue():
+    try:
+        moneyTag = driver.find_element(by=By.ID, value="balanceValue")
+
+    except NoSuchElementException:  #口座残高が取得できなかった
+        return -3
+
+    #口座残高の"￥(半角)"と、","を削除
+    mmm = re.sub(r",", "", moneyTag.text[1:])   # "￥"が取り除けなかったので、[1:]で先頭文字を無視するようにした
+    money = int(mmm)
+
+    return money
+
 
 #-----------------------------
 #HighLowの口座にログインし、指定の時間が来たら申し込みをする
@@ -191,52 +225,47 @@ def hiloLogin():
     time.sleep(3)
 
     #ログインチェック（口座残高を取得）
-    try:
-        moneyTag = driver.find_element(by=By.ID, value="balanceValue")
-
-    except NoSuchElementException:  #口座残高が取得できなかった
-        #tmp = driver.find_elements(by=By.XPATH, value="//b[contains(text(),'重要なお知らせ')]")
-        #if len(tmp) >= 1:
-        #    ii = -1
-        #else:
-        #    ii = -2
-        print("Login Error!!!")
+    money = getBalanceValue()
+    if money < 0:
+        msg = f'ログインに失敗しました'
+        writeMsg(msg)
         return -3
-
-    #口座残高の"￥(半角)"と、","を削除
-    mmm = re.sub(r",", "", moneyTag.text[1:])   # "￥"が取り除けなかったので、[1:]で先頭文字を無視するようにした
-    money = int(mmm)
-    print(money)
 
     #残高があるか確認
     if BET_MONEY > money:
-        print("残高不足！")
+        msg = f'残高不足です (残高：{money})'
+        writeMsg(msg)
         return -4
 
     try:
         betBox = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[1]/div[2]/div/input")
         betBox.send_keys(str(BET_MONEY))
     except NoSuchElementException:  #金額設定ができなかった
-        print("取引時間外？")
+        msg = f'取引時間外の可能性があります'
+        writeMsg(msg)
     #    return -5
 
     # LOWをクリック
-    #   login = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/div[1]/div/div[1]/div[3]/div")
-    #login.click()
+    login = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/div[1]/div/div[1]/div[3]/div")
+    login.click()
+
+    writeMsg(f'取引前の残高：{money}')
 
     # 現在時刻がエントリ時刻になるまでループして待つ
     waitDateTime(v_entryTime)
 
     # 今すぐ購入をクリック
-    #login = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/div[1]/div/div[2]/div/div")
-    #login.click()
+    login = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/div[1]/div/div[2]/div/div")
+    login.click()
 
-    return 0
+    return 1
 
 '''
 メインルーチン
 '''
 if __name__ == "__main__":
+
+    writeMsg("--- 開始 ---")
 
     getConfigFile()
     print(v_dt)
@@ -257,13 +286,22 @@ if __name__ == "__main__":
         else:
             driver = webdriver.Chrome(service=chrome_service)
 
-        hiloLogin()
-        time.sleep(6)
-        hiloLogOut()
+        if hiloLogin() > 0:
+            time.sleep(60)
+            afterMoney = getBalanceValue()
+            writeMsg(f'取引後の残高：{afterMoney}')
+            hiloLogOut()
 
         #chromeを閉じる
         driver.quit()
 
+    msg = f'--- 終了 ---\n'
+    writeMsg(msg)
+
+    #メール送信
+    sendGmail(MAIL_ADR, MAIL_ADR, MAIL_ADR, MAIL_PWD, MAIL_TITLE, msgBuf)
+
+    print(msgBuf)
 
     print("complete")
 
