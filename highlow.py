@@ -79,7 +79,7 @@ def getConfigFile():
 
     v_dt = datetime.datetime.today()  # ローカルな現在の日付と時刻を取得
     v_entryTime = datetime.datetime.strptime(ENTRY_TIME, '%H:%M:%S').replace(year=v_dt.year, month=v_dt.month, day=v_dt.day)
-    v_entryBefore1Minute = (datetime.datetime.strptime(ENTRY_TIME, '%H:%M:%S') + datetime.timedelta(minutes=-1)).replace(year=v_dt.year, month=v_dt.month, day=v_dt.day)
+    v_entryBefore1Minute = (datetime.datetime.strptime(ENTRY_TIME, '%H:%M:%S') + datetime.timedelta(minutes=-3)).replace(year=v_dt.year, month=v_dt.month, day=v_dt.day)
 
 #-----------------------------
 # 本日が休日かどうかチェックする
@@ -242,7 +242,7 @@ def hiloLogin():
     except NoSuchElementException:  #金額設定ができなかった
         msg = f'取引時間外の可能性があります'
         writeMsg(msg)
-    #    return -5
+        return -5
 
     # LOWをクリック
     login = driver.find_element(by=By.XPATH, value="/html/body/main/div/div[4]/div[2]/div[1]/div/div[1]/div[2]/div/div[2]/div/div[1]/div[2]/div[1]/div/div[1]/div[3]/div")
@@ -276,7 +276,7 @@ if __name__ == "__main__":
 
     if checkEntryDateTime() == 0:
 
-        # 現在時刻がエントリ時刻の１分前になるまでループして待つ
+        # 現在時刻がエントリ時刻の３分前になるまでループして待つ
         print(f'ただ今、ログイン時間まで待機中です・・・（ログイン時間：{v_entryBefore1Minute}）')
         waitDateTime(v_entryBefore1Minute)
 
